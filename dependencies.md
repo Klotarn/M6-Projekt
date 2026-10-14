@@ -5,3 +5,5 @@
 ping3 (maybe not)
 
 `pip install ping3`
+
+dotenv
