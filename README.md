@@ -1,9 +1,11 @@
-Idé: Scrapa instagram på nyheter från valda konton
+# TODO:s
 
-- Ha koll på vilka nyheter som redan visats
-- Men ändå visa gamla (men typ under annan rubrik för tydlighet)
-- Man får själv logga in med eget insta-konto (om möjligt) annars gör vi ett
+### UI
 
-Idé: Chatt i python för lokal chatt mellan två datorer
+- send message
+- see messages
+- find a way to make sure sent message isn't printed twice in the console
 
-- 
+### connection
+
+- automatically find server?
