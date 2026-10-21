@@ -1,10 +1,14 @@
 import socket
+import threading
 import json
 
 user_data_path = "./userdata.json".encode("utf8")
 user_data_fallback_path = "./userdata_example.json".encode("utf8")
 access_option = "a"
 write_option = "w"
+
+clients = []
+clients_lock = threading.Lock()
 
 
 # --------------------------------------------------------------------------
@@ -34,20 +38,27 @@ def add_message_to_userdata(sender, message):
     print(f"User data: {user_data}")
 
 
-# --------------------------------------------------------------------------
-# Program execution start
+def broadcast(message):
+    with clients_lock:
+        disconnected = []
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(("0.0.0.0", 5000))
-server.listen(5)
+        for client in clients:
+            try:
+                client.sendall(message.encode("utf-8"))
+            except:
+                disconnected.append(client)
 
-print("Server is listening on port 5000...")
+        for client in disconnected:
+            clients.remove(client)
 
-while True:
-    client_socket, client_address = server.accept()
+
+def handle_client(client_socket, client_address):
     print(f"Connection from {client_address} has been established!")
 
-    with client_socket:
+    with clients_lock:
+        clients.append(client_socket)
+
+    try:
         while True:
             data = client_socket.recv(1024)
 
@@ -59,5 +70,32 @@ while True:
 
             add_message_to_userdata(client_address, message)
 
-            response = "Server is responding!"
-            client_socket.sendall(response.encode("utf-8"))
+            response = json.dumps({"sender": str(client_address), "message": message})
+
+            broadcast(response)
+
+    finally:
+        with clients_lock:
+            if client_socket in clients:
+                clients.remove(client_socket)
+
+
+# --------------------------------------------------------------------------
+# Program execution start
+
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(("0.0.0.0", 5000))
+server.listen(5)
+
+print("Server is listening on port 5000...")
+
+while True:
+    client_socket, client_address = server.accept()
+
+    thread = threading.Thread(
+        target=handle_client, args=(client_socket, client_address)
+    )
+
+    thread.daemon = True
+    thread.start()
