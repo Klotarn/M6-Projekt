@@ -1,3 +1,4 @@
 __pycache__
 .env
 /downloaded_files/
+userdata.json

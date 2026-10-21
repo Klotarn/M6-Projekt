@@ -2,6 +2,7 @@ import socket
 import json
 
 user_data_path = "./userdata.json".encode("utf8")
+user_data_fallback_path = "./userdata_example.json".encode("utf8")
 access_option = "a"
 write_option = "w"
 
@@ -11,8 +12,12 @@ server.listen(5)
 
 def access_userdata(option, user_data):
     if option == access_option: 
-        with open(user_data_path) as f: 
-            return json.load(f)
+        try:
+            with open(user_data_path) as f: 
+                return json.load(f)
+        except:
+            with open(user_data_fallback_path) as f:
+                return json.load(f)
 
     if option == write_option:
         data_to_write = json.dumps(user_data, indent=4)
