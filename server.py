@@ -6,14 +6,15 @@ user_data_fallback_path = "./userdata_example.json".encode("utf8")
 access_option = "a"
 write_option = "w"
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(("0.0.0.0", 5000))
-server.listen(5)
+
+# --------------------------------------------------------------------------
+# Functions
+
 
 def access_userdata(option, user_data):
-    if option == access_option: 
+    if option == access_option:
         try:
-            with open(user_data_path) as f: 
+            with open(user_data_path) as f:
                 return json.load(f)
         except:
             with open(user_data_fallback_path) as f:
@@ -24,6 +25,22 @@ def access_userdata(option, user_data):
         with open(user_data_path, "w") as f:
             f.write(data_to_write)
 
+
+def add_message_to_userdata(sender, message):
+    user_data = access_userdata(access_option, None)
+    user_data["messages"].append({"sender": sender, "message": message})
+    access_userdata(write_option, user_data)
+
+    print(f"User data: {user_data}")
+
+
+# --------------------------------------------------------------------------
+# Program execution start
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(("0.0.0.0", 5000))
+server.listen(5)
+
 print("Server is listening on port 5000...")
 
 while True:
@@ -33,19 +50,14 @@ while True:
     with client_socket:
         while True:
             data = client_socket.recv(1024)
-            user_data = access_userdata(access_option, None)
 
             if not data:
                 break
 
             message = data.decode("utf-8")
             print(f"Received data {message} from {client_address}")
-            
-            user_data.update({
-                "sender": client_address,
-                "message": message
-            })
-            access_userdata(write_option, user_data)
+
+            add_message_to_userdata(client_address, message)
 
             response = "Server is responding!"
             client_socket.sendall(response.encode("utf-8"))
