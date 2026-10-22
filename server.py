@@ -1,6 +1,7 @@
 import socket
 import threading
 import json
+from ast import literal_eval as make_tuple
 
 user_data_path = "./userdata.json".encode("utf8")
 user_data_fallback_path = "./userdata_example.json".encode("utf8")
@@ -42,7 +43,13 @@ def broadcast(message):
 
         for client in clients:
             try:
-                client.sendall(message.encode("utf-8"))
+                message_dict = json.loads(message)
+                sender = make_tuple(message_dict["sender"])
+
+                if client["address"] == sender:
+                    continue  # Skip sending the message back to the sender
+
+                client["socket"].sendall(message.encode("utf-8"))
             except:
                 disconnected.append(client)
 
@@ -54,7 +61,7 @@ def handle_client(client_socket, client_address):
     print(f"Connection from {client_address} has been established!")
 
     with clients_lock:
-        clients.append(client_socket)
+        clients.append({"address": client_address, "socket": client_socket})
 
     try:
         while True:
@@ -74,8 +81,10 @@ def handle_client(client_socket, client_address):
 
     finally:
         with clients_lock:
-            if client_socket in clients:
-                clients.remove(client_socket)
+            for client in clients:
+                if client["socket"] == client_socket:
+                    clients.remove(client)
+                    break
 
 
 # --------------------------------------------------------------------------
