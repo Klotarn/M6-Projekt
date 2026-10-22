@@ -35,8 +35,6 @@ def add_message_to_userdata(sender, message):
     user_data["messages"].append({"sender": sender, "message": message})
     access_userdata(write_option, user_data)
 
-    print(f"User data: {user_data}")
-
 
 def broadcast(message):
     with clients_lock:
