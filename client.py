@@ -39,5 +39,3 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
             break
 
         client.sendall(message.encode("utf-8"))
-        # response = client.recv(1024).decode("utf-8")
-        # print(response)
