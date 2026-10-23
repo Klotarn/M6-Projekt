@@ -9,6 +9,8 @@ from prompt_toolkit.patch_stdout import patch_stdout
 
 load_dotenv()
 
+session = PromptSession(erase_when_done=True) # Add erase_when_done=True to make the prompt disappear after input
+
 SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
 
 print(f"Connecting to server at {SERVER_IP}:5000")
@@ -35,10 +37,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
 
     threading.Thread(target=receive_messages, args=(client,), daemon=True).start()
 
-    while True:
-        message = input("Write message: ")
+    with patch_stdout(): # Makes user input stick to bottom and allows messages to be printed above it
+        while True:
+            message = session.prompt("> ", placeholder="Write your message here...")
 
-        if message.lower() == "quit":
-            break
+            if not message.strip(): # Avoid sending empty messages
+                continue
 
-        client.sendall(message.encode("utf-8"))
+            print(f"You: {message}")
+
+            if message.lower() == "quit":
+                break
+
+            client.sendall(message.encode("utf-8"))
