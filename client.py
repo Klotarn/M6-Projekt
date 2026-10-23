@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 import threading
 import json
 
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
+
 load_dotenv()
 
 SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
