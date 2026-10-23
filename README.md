@@ -10,3 +10,4 @@
 ### connection
 
 - [ ] automatically find server?
+- [ ] Wait for connection before allowing user input
