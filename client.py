@@ -194,12 +194,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
     # TODO - Only execute following code if user is logged in
     with patch_stdout(): # Makes user input stick to bottom and allows messages to be printed above it
         while True:
-            placeholder = HTML('<gray><italic>Write your message here...</italic></gray>')
+            placeholder = HTML('<gray><italic>Write your message here... Type /help for a list of commands</italic></gray>')
 
             message = session.prompt("> ", is_password=False, placeholder=placeholder, style=prompt_style)
 
             if not message.strip(): # Avoid sending empty messages
                 continue
+
+            print(f"You: {message}")
 
             command_action = check_message_for_commands(message)
 
@@ -207,9 +209,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
                 break
 
             if command_action == "message":
-                    
-
-                print(f"You: {message}")
 
                 packet = {
                     "action": command_action,
