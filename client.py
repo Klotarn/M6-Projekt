@@ -21,6 +21,15 @@ SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
 
 print(f"Connecting to server at {SERVER_IP}:5000")
 
+# TODO - welcome function from jespers lagra
+
+# TODO - login function - use hashing from johans lagra, needs server side implementation
+
+# TODO - register function from johans lagra, needs server side implementation
+
+# TODO - login_failed from jespers lagra
+
+# TODO - quit from jespers lagra
 
 def receive_messages(client):
     while True:
@@ -40,6 +49,8 @@ def receive_messages(client):
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
     client.connect((SERVER_IP, 5000))
+
+    # TODO - here is where main menu should be implemented with login, logout, register and quit options. This should be done before starting the receive_messages thread.
 
     threading.Thread(target=receive_messages, args=(client,), daemon=True).start()
 

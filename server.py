@@ -57,6 +57,15 @@ def broadcast(message):
             clients.remove(client)
 
 
+# TODO - auth function to handle login and logout, and user creation. This function should be called in the handle_client function when a client connects.
+
+# TODO - create_user function
+
+# TODO - login function
+
+# TODO - logout
+
+
 def handle_client(client_socket, client_address):
     print(f"Connection from {client_address} has been established!")
 
@@ -70,6 +79,7 @@ def handle_client(client_socket, client_address):
             if not data:
                 break
 
+            # TODO - here is where the data from the client is received and processed. This is where login, logout and user creation should be handled.
             message = data.decode("utf-8")
             print(f"Received data {message} from {client_address}")
 
