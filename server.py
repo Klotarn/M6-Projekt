@@ -3,8 +3,8 @@ import threading
 import json
 from ast import literal_eval as make_tuple
 
-user_data_path = "./userdata.json".encode("utf8")
-user_data_fallback_path = "./userdata_example.json".encode("utf8")
+user_data_path = "./messages.json".encode("utf8")
+user_data_fallback_path = "./messages_example.json".encode("utf8")
 access_option = "a"
 write_option = "w"
 
@@ -16,7 +16,7 @@ clients_lock = threading.Lock()
 # Functions
 
 
-def access_userdata(option, user_data):
+def access_messages(option, messages):
     if option == access_option:
         try:
             with open(user_data_path) as f:
@@ -26,15 +26,15 @@ def access_userdata(option, user_data):
                 return json.load(f)
 
     if option == write_option:
-        data_to_write = json.dumps(user_data, indent=4)
+        data_to_write = json.dumps(messages, indent=4)
         with open(user_data_path, "w") as f:
             f.write(data_to_write)
 
 
-def add_message_to_userdata(sender, message):
-    user_data = access_userdata(access_option, None)
-    user_data["messages"].append({"sender": sender, "message": message})
-    access_userdata(write_option, user_data)
+def add_message_to_messages(sender, message):
+    messages = access_messages(access_option, None)
+    messages["messages"].append({"sender": sender, "message": message})
+    access_messages(write_option, messages)
 
 
 def broadcast(message):
@@ -73,7 +73,7 @@ def handle_client(client_socket, client_address):
             message = data.decode("utf-8")
             print(f"Received data {message} from {client_address}")
 
-            add_message_to_userdata(client_address, message)
+            add_message_to_messages(client_address, message)
 
             response = json.dumps({"sender": str(client_address), "message": message})
 
