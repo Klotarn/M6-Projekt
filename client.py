@@ -20,6 +20,11 @@ The following commands are available:
 
 load_dotenv()
 
+SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
+
+logged_in = threading.Event()
+auth_results = Queue()
+
 prompt_style = Style.from_dict({
     "prompt": "ansicyan bold", # Customize the prompt style
     "": "ansiyellow", # Customize the input text style
@@ -30,9 +35,6 @@ auth_style = Style.from_dict({
 })
 
 session = PromptSession(erase_when_done=True, style=prompt_style) # Add erase_when_done=True to make the prompt disappear after input
-
-SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
-auth_results = Queue()
 
 print(f"Connecting to server at {SERVER_IP}:5000")
 
@@ -52,10 +54,10 @@ def receive_packets(client): # TODO - maybe use global variable to decide if mes
             action = packet.get("action")
             data = packet.get("data")
 
-            if action == "auth_login_status":
+            if action in {"auth_login_status", "auth_logout_status"}:
                 auth_results.put(data)
 
-            if action == "message":
+            if action == "message" and logged_in.is_set():
                 print(f"[{data['sender']}] {data['message']}")
 
         except:
@@ -79,7 +81,6 @@ def login():
 
 
 def authenticate():
-    # auth_results.queue.clear()
     while True:
         login()
         result = auth_results.get()
@@ -87,9 +88,12 @@ def authenticate():
         message = result.get("message")
 
         if status == "login_response_success":
+            logged_in.set()
             print(f"Login successful!")
+            auth_results.task_done()
             return
 
+        logged_in.clear()
         print(f"Login failed: {message}")
         
         auth_results.task_done()
@@ -105,6 +109,14 @@ def logout():
     }
 
     send(packet)
+
+    result = auth_results.get()
+    if result.get("status") == "logout_response_success":
+        logged_in.clear()
+        print("You are now logged out.")
+    else:
+        print(f"Logout failed: {result.get('message', 'Unknown error.')}")
+    auth_results.task_done()
 
     authenticate()
 
@@ -167,7 +179,6 @@ def send(packet):
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
     client.connect((SERVER_IP, 5000))
-
 
     threading.Thread(target=receive_packets, args=(client,), daemon=True).start()
 
