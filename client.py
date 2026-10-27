@@ -33,7 +33,7 @@ print(f"Connecting to server at {SERVER_IP}:5000")
 
 # TODO - quit from jespers lagra
 
-def receive_messages(client): # TODO - maybe use global variable to decide if messages should be received or not, to avoid receiving messages when logged out. This should be set in the login and logout functions.
+def receive_packets(client): # TODO - maybe use global variable to decide if messages should be received or not, to avoid receiving messages when logged out. This should be set in the login and logout functions.
     while True:
         try:
             response = client.recv(1024)
@@ -41,9 +41,11 @@ def receive_messages(client): # TODO - maybe use global variable to decide if me
             if not response:
                 break
 
-            data = json.loads(response.decode("utf-8"))
-
-            print(f"[{data['sender']}] {data['message']}")
+            packet = json.loads(response.decode("utf-8"))
+            action = packet.get("action")
+            data = packet.get("data")
+            if action == "message":
+                print(f"[{data['sender']}] {data['message']}")
 
         except:
             break
@@ -53,7 +55,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
     client.connect((SERVER_IP, 5000))
 
 
-    threading.Thread(target=receive_messages, args=(client,), daemon=True).start()
+    threading.Thread(target=receive_packets, args=(client,), daemon=True).start()
 
     # TODO - here is where main menu should be implemented with login, logout, register and quit options. Keep in a while loop, but check if patch_stdout might be something like instances which would be bad to start many of
     # TODO - Only execute following code if user is logged in

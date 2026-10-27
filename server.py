@@ -31,25 +31,41 @@ def access_messages(option, messages):
             f.write(data_to_write)
 
 
+# Store messages in the JSON "database"
 def add_message_to_messages(sender, message):
     messages = access_messages(access_option, None)
     messages["messages"].append({"sender": sender, "message": message})
     access_messages(write_option, messages)
 
 
-def broadcast(message):
+def send_packet_to_client(client_socket, packet):
+    client_socket.sendall(json.dumps(packet).encode("utf-8"))
+
+
+# Sends message to all connected clients except the sender.
+def broadcast(client_address, message):
+    print(f"Broadcasting message from {client_address}: {message}")
+
+    add_message_to_messages(client_address, message)
+
+    PACKET = json.dumps({"sender": str(client_address), "message": message})
+
     with clients_lock:
         disconnected = []
 
         for client in clients:
             try:
-                message_dict = json.loads(message)
+                message_dict = json.loads(PACKET)
                 sender = make_tuple(message_dict["sender"])
-
                 if client["address"] == sender:
                     continue  # Skip sending the message back to the sender
 
-                client["socket"].sendall(message.encode("utf-8"))
+                packet = {
+                    "action": "message",
+                    "data": message_dict
+                }
+
+                send_packet_to_client(client["socket"], packet)
             except:
                 disconnected.append(client)
 
@@ -80,14 +96,12 @@ def handle_client(client_socket, client_address):
                 break
 
             # TODO - here is where the data from the client is received and processed. This is where login, logout and user creation should be handled.
-            message = data.decode("utf-8")
-            print(f"Received data {message} from {client_address}")
+            packet = json.loads(data.decode("utf-8"))
+            action = packet["action"]
+            target = packet.get("target")  # Use .get() to avoid KeyError if "target" is not present
 
-            add_message_to_messages(client_address, message)
-
-            response = json.dumps({"sender": str(client_address), "message": message})
-
-            broadcast(response)
+            if action == "message":
+                broadcast(client_address, packet["data"])
 
     finally:
         with clients_lock:
