@@ -104,14 +104,14 @@ def login(client_socket, username, password):
     ):
         print(f"Failed login attempt for user {username}.")
         packet = {
-            "action": "auth_status",
+            "action": "auth_login_status",
             "data": {"status": "login_response_failure", "message": "Invalid username or password."}
         }
         send_packet_to_client(client_socket, packet)
     else:
         print(f"User {username} logged in successfully.")
         packet = {
-            "action": "auth_status",
+            "action": "auth_login_status",
             "data": {"status": "login_response_success", "message": "Login successful."}
         }
         send_packet_to_client(client_socket, packet)
@@ -123,7 +123,7 @@ def logout(client_socket):
     # It should send a packet back to the client indicating that the logout was successful.
     print(f"Client {client_socket.getpeername()} logged out.")
     packet = {
-        "action": "auth_status",
+        "action": "auth_logout_status",
         "data": {"status": "logout_response_success", "message": "Logout successful."}
     }
     send_packet_to_client(client_socket, packet)

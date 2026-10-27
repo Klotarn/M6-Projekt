@@ -56,7 +56,7 @@ def receive_packets(client): # TODO - maybe use global variable to decide if mes
             action = packet.get("action")
             data = packet.get("data")
 
-            if action == "auth_status":
+            if action == "auth_login_status":
                 auth_results.put(data)
 
             if action == "message":
@@ -94,6 +94,8 @@ def authenticate():
             return
 
         print(f"Login failed: {message}")
+        
+        auth_results.task_done()
 
 
 def password_hash(password):
@@ -106,7 +108,7 @@ def logout():
     }
 
     send(packet)
-    
+
     authenticate()
 
 def quit():
