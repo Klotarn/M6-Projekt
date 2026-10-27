@@ -3,11 +3,10 @@ import os
 from dotenv import load_dotenv
 import threading
 import json
-import getpass
 import hashlib
 from queue import Queue
 
-from prompt_toolkit import PromptSession
+from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
@@ -21,11 +20,16 @@ The following commands are available:
 
 load_dotenv()
 
-style = Style.from_dict({
+prompt_style = Style.from_dict({
     "prompt": "ansicyan bold", # Customize the prompt style
     "": "ansiyellow", # Customize the input text style
 })
-session = PromptSession(erase_when_done=True, style=style) # Add erase_when_done=True to make the prompt disappear after input
+auth_style = Style.from_dict({
+    "prompt": "white bold", # Customize the prompt style
+    "": "white", # Customize the input text style
+})
+
+session = PromptSession(erase_when_done=True, style=prompt_style) # Add erase_when_done=True to make the prompt disappear after input
 
 SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
 auth_results = Queue()
@@ -67,8 +71,9 @@ def receive_packets(client): # TODO - maybe use global variable to decide if mes
 
 
 def login():
-    username = input("Username: ")
-    password = password_hash(getpass.getpass())
+    username = session.prompt("Username: ", is_password=False, placeholder=HTML('<gray><italic>Enter your username...</italic></gray>'), style=auth_style)
+    print_formatted_text(HTML('<bold>Username:</bold> {}').format(username))
+    password = password_hash(session.prompt("Password: ", is_password=True, placeholder=HTML('<gray><italic>Enter your password...</italic></gray>'), style=auth_style))
 
     packet = {
         "action": "login",
@@ -182,7 +187,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
         while True:
             placeholder = HTML('<gray><italic>Write your message here...</italic></gray>')
 
-            message = session.prompt("> ", placeholder=placeholder)
+            message = session.prompt("> ", is_password=False, placeholder=placeholder, style=prompt_style)
 
             if not message.strip(): # Avoid sending empty messages
                 continue
