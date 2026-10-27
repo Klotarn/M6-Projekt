@@ -1,14 +1,14 @@
 {
     "users": [
         {
-            "username": "user1",
-            "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-            "_comment": "This is a hashed password for 'password'."
+            "username": "johan",
+            "password": "fe22528e57d78d3fac1c34c73a05b52946d4d3fdc1c614083aa89335b74f0821",
+            "_comment": "This is a hashed password for 'johan123'."
         },
         {
-            "username": "user2",
-            "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-            "_comment": "This is a hashed password for '123456'."
+            "username": "jesper",
+            "password": "4456c7e97e31821c176e5ecae7dc0d250425fb9bcd5d48b4ff729c8df14fe75e",
+            "_comment": "This is a hashed password for 'jesper123'."
         }
     ]
 }
