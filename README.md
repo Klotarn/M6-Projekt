@@ -2,6 +2,8 @@
 
 ### UI
 
+- [ ] clear console when commands are sent
+- [ ] load full chat
 - [x] send message
 - [x] see messages
 - [x] find a way to make sure sent message isn't printed twice in the console
