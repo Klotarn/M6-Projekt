@@ -3,6 +3,9 @@ import os
 from dotenv import load_dotenv
 import threading
 import json
+import getpass
+import hashlib
+from queue import Queue
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -18,6 +21,7 @@ style = Style.from_dict({
 session = PromptSession(erase_when_done=True, style=style) # Add erase_when_done=True to make the prompt disappear after input
 
 SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
+auth_results = Queue()
 
 print(f"Connecting to server at {SERVER_IP}:5000")
 
@@ -44,6 +48,10 @@ def receive_packets(client): # TODO - maybe use global variable to decide if mes
             packet = json.loads(response.decode("utf-8"))
             action = packet.get("action")
             data = packet.get("data")
+
+            if action == "auth_status":
+                auth_results.put(data)
+
             if action == "message":
                 print(f"[{data['sender']}] {data['message']}")
 
@@ -51,11 +59,48 @@ def receive_packets(client): # TODO - maybe use global variable to decide if mes
             break
 
 
+def login():
+    username = input("Username: ")
+    password = password_hash(getpass.getpass())
+
+    packet = {
+        "action": "login",
+        "data": {
+            "username": username, # example usernames are user1 and user2
+            "password": password # example passwords are password and 123456
+        }
+    }
+
+    packet = json.dumps(packet)  # Convert the packet to a JSON string before sending
+
+    client.sendall(packet.encode("utf-8"))
+
+
+def authenticate():
+    while True:
+        login()
+        result = auth_results.get()
+        status = result.get("status")
+        message = result.get("message")
+
+        if status == "success":
+            print(f"Login successful!")
+            return
+
+        print(f"Login failed: {message}")
+
+
+def password_hash(password):
+    return hashlib.sha256(password.encode(encoding = 'UTF-8', errors = 'strict')).hexdigest()
+
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
     client.connect((SERVER_IP, 5000))
 
 
     threading.Thread(target=receive_packets, args=(client,), daemon=True).start()
+
+    authenticate()
 
     # TODO - here is where main menu should be implemented with login, logout, register and quit options. Keep in a while loop, but check if patch_stdout might be something like instances which would be bad to start many of
     # TODO - Only execute following code if user is logged in

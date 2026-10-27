@@ -3,8 +3,10 @@ import threading
 import json
 from ast import literal_eval as make_tuple
 
-user_data_path = "./messages.json".encode("utf8")
-user_data_fallback_path = "./messages_example.json".encode("utf8")
+messages_path = "./messages.json".encode("utf8")
+messages_fallback_path = "./messages_example.json".encode("utf8")
+users_path = "./users.json".encode("utf8")
+users_fallback_path = "./users_example.json".encode("utf8")
 access_option = "a"
 write_option = "w"
 
@@ -19,15 +21,29 @@ clients_lock = threading.Lock()
 def access_messages(option, messages):
     if option == access_option:
         try:
-            with open(user_data_path) as f:
+            with open(messages_path) as f:
                 return json.load(f)
         except:
-            with open(user_data_fallback_path) as f:
+            with open(messages_fallback_path) as f:
                 return json.load(f)
 
     if option == write_option:
         data_to_write = json.dumps(messages, indent=4)
-        with open(user_data_path, "w") as f:
+        with open(messages_path, "w") as f:
+            f.write(data_to_write)
+
+def access_users(option, users): # TODO - refactor so that only one user is changed at a time
+    if option == access_option:
+        try:
+            with open(users_path) as f:
+                return json.load(f)
+        except:
+            with open(users_fallback_path) as f:
+                return json.load(f)
+
+    if option == write_option:
+        data_to_write = json.dumps(users, indent=4)
+        with open(users_path, "w") as f:
             f.write(data_to_write)
 
 
@@ -43,19 +59,18 @@ def send_packet_to_client(client_socket, packet):
 
 
 # Sends message to all connected clients except the sender.
-def broadcast(client_address, message):
+def broadcast(client_address, message): # TODO - maybe just pass packet instead of packet['data'] to avoid having to make a new dict here
     print(f"Broadcasting message from {client_address}: {message}")
 
     add_message_to_messages(client_address, message)
 
-    PACKET = json.dumps({"sender": str(client_address), "message": message})
 
     with clients_lock:
         disconnected = []
 
         for client in clients:
             try:
-                message_dict = json.loads(PACKET)
+                message_dict = {"sender": str(client_address), "message": message}
                 sender = make_tuple(message_dict["sender"])
                 if client["address"] == sender:
                     continue  # Skip sending the message back to the sender
@@ -79,6 +94,28 @@ def broadcast(client_address, message):
 
 # TODO - login function
 
+def login(client_socket, username, password):
+    # TODO - implement login logic here. This function should check the provided username and password against the stored user data.
+    # If the login is successful, send a packet back to the client indicating success. If the login fails, send a packet back indicating failure.
+    users = access_users(access_option, None)
+    if not any(
+        user["username"] == username and user["password"] == password
+        for user in users["users"]
+    ):
+        print(f"Failed login attempt for user {username}.")
+        packet = {
+            "action": "auth_status",
+            "data": {"status": "failure", "message": "Invalid username or password."}
+        }
+        send_packet_to_client(client_socket, packet)
+    else:
+        print(f"User {username} logged in successfully.")
+        packet = {
+            "action": "auth_status",
+            "data": {"status": "success", "message": "Login successful."}
+        }
+        send_packet_to_client(client_socket, packet)
+
 # TODO - logout handling. this should be triggered either when message is "quit" or when a certain logout command is sent from the client.
 
 
@@ -99,6 +136,11 @@ def handle_client(client_socket, client_address):
             packet = json.loads(data.decode("utf-8"))
             action = packet["action"]
             target = packet.get("target")  # Use .get() to avoid KeyError if "target" is not present
+
+            if action == "login":
+                username = packet["data"]["username"]
+                password = packet["data"]["password"]
+                login(client_socket, username, password)
 
             if action == "message":
                 broadcast(client_address, packet["data"])
