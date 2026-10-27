@@ -43,7 +43,7 @@ print(f"Connecting to server at {SERVER_IP}:5000")
 
 # TODO - register function from johans lagra, needs server side implementation
 
-def receive_packets(client): # TODO - maybe use global variable to decide if messages should be received or not, to avoid receiving messages when logged out. This should be set in the login and logout functions.
+def receive_packets(client):
     while True:
         try:
             response = client.recv(1024)
