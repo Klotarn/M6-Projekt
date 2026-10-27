@@ -59,25 +59,34 @@ def send_packet_to_client(client_socket, packet):
 
 
 # Sends message to all connected clients except the sender.
-def broadcast(client_address, message):
-    print(f"Broadcasting message from {client_address}: {message}")
+def broadcast(sender_socket, message):
+    with clients_lock:
+        sender = next(
+            (client for client in clients if client["socket"] == sender_socket),
+            None,
+        )
 
-    add_message_to_messages(client_address, message)
+    if sender is None or sender["username"] is None:
+        return
 
+    sender_username = sender["username"]
+    print(f"Broadcasting message from {sender_username}: {message}")
+    add_message_to_messages(sender_username, message)
 
     with clients_lock:
         disconnected = []
 
         for client in clients:
             try:
-                message_dict = {"sender": str(client_address), "message": message}
-                sender = make_tuple(message_dict["sender"])
-                if client["address"] == sender:
+                if client["socket"] == sender_socket:
                     continue # Skip sending the message back to the sender
 
                 packet = {
                     "action": "message",
-                    "data": message_dict
+                    "data": {
+                        "sender_username": sender_username,
+                        "message": message,
+                    }
                 }
 
                 send_packet_to_client(client["socket"], packet)
@@ -106,9 +115,19 @@ def login(client_socket, username, password):
         send_packet_to_client(client_socket, packet)
     else:
         print(f"User {username} logged in successfully.")
+        with clients_lock:
+            for client in clients:
+                if client["socket"] == client_socket:
+                    client["username"] = username
+                    break
+
         packet = {
             "action": "auth_login_status",
-            "data": {"status": "login_response_success", "message": "Login successful."}
+            "data": {
+                "status": "login_response_success",
+                "message": "Login successful.",
+                "username": username,
+            }
         }
         send_packet_to_client(client_socket, packet)
 
@@ -119,12 +138,21 @@ def logout(client_socket):
         "data": {"status": "logout_response_success", "message": "Logout successful."}
     }
     send_packet_to_client(client_socket, packet)
+    with clients_lock:
+        for client in clients:
+            if client["socket"] == client_socket:
+                client["username"] = None
+                break
 
 def handle_client(client_socket, client_address):
     print(f"Connection from {client_address} has been established!")
 
     with clients_lock:
-        clients.append({"address": client_address, "socket": client_socket})
+        clients.append({
+            "address": client_address,
+            "socket": client_socket,
+            "username": None,
+        })
 
     try:
         while True:
@@ -151,7 +179,7 @@ def handle_client(client_socket, client_address):
                 break
 
             if action == "message":
-                broadcast(client_address, packet["data"])
+                broadcast(client_socket, packet["data"]["message"])
 
     except (ConnectionResetError, ConnectionAbortedError):
         # A client that closes abruptly can reset the connection on Windows.

@@ -23,6 +23,7 @@ load_dotenv()
 SERVER_IP = os.getenv("SERVER_IP")  # Default to localhost if not set
 
 logged_in = threading.Event()
+current_username = None
 auth_results = Queue()
 
 prompt_style = Style.from_dict({
@@ -58,7 +59,7 @@ def receive_packets(client): # TODO - maybe use global variable to decide if mes
                 auth_results.put(data)
 
             if action == "message" and logged_in.is_set():
-                print(f"[{data['sender']}] {data['message']}")
+                print(f"{data['sender_username']}: {data['message']}")
 
         except:
             break
@@ -88,6 +89,8 @@ def authenticate():
         message = result.get("message")
 
         if status == "login_response_success":
+            global current_username
+            current_username = result.get("username")
             logged_in.set()
             print(f"Login successful!")
             auth_results.task_done()
@@ -103,6 +106,8 @@ def password_hash(password):
     return hashlib.sha256(password.encode(encoding = 'UTF-8', errors = 'strict')).hexdigest()
 
 def logout():
+    global current_username
+
     packet = {
         "action": "logout",
         "data": {}
@@ -113,6 +118,7 @@ def logout():
     result = auth_results.get()
     if result.get("status") == "logout_response_success":
         logged_in.clear()
+        current_username = None
         print("You are now logged out.")
     else:
         print(f"Logout failed: {result.get('message', 'Unknown error.')}")
@@ -207,7 +213,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
 
                 packet = {
                     "action": command_action,
-                    "data": message
+                    "data": {
+                        "message": message,
+                        "username": current_username,
+                    }
                 }
 
                 send(packet)
