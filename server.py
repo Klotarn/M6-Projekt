@@ -59,7 +59,7 @@ def send_packet_to_client(client_socket, packet):
 
 
 # Sends message to all connected clients except the sender.
-def broadcast(client_address, message): # TODO - maybe just pass packet instead of packet['data'] to avoid having to make a new dict here
+def broadcast(client_address, message):
     print(f"Broadcasting message from {client_address}: {message}")
 
     add_message_to_messages(client_address, message)
@@ -73,7 +73,7 @@ def broadcast(client_address, message): # TODO - maybe just pass packet instead 
                 message_dict = {"sender": str(client_address), "message": message}
                 sender = make_tuple(message_dict["sender"])
                 if client["address"] == sender:
-                    continue  # Skip sending the message back to the sender
+                    continue # Skip sending the message back to the sender
 
                 packet = {
                     "action": "message",
@@ -92,11 +92,7 @@ def broadcast(client_address, message): # TODO - maybe just pass packet instead 
 
 # TODO - create_user function
 
-# TODO - login function
-
 def login(client_socket, username, password):
-    # TODO - implement login logic here. This function should check the provided username and password against the stored user data.
-    # If the login is successful, send a packet back to the client indicating success. If the login fails, send a packet back indicating failure.
     users = access_users(access_option, None)
     if not any(
         user["username"] == username and user["password"] == password
@@ -116,11 +112,7 @@ def login(client_socket, username, password):
         }
         send_packet_to_client(client_socket, packet)
 
-# TODO - logout handling. this should be triggered either when message is "quit" or when a certain logout command is sent from the client.
-
 def logout(client_socket):
-    # TODO - implement logout logic here. This function should handle the logout process for the client.
-    # It should send a packet back to the client indicating that the logout was successful.
     print(f"Client {client_socket.getpeername()} logged out.")
     packet = {
         "action": "auth_logout_status",
@@ -136,15 +128,15 @@ def handle_client(client_socket, client_address):
 
     try:
         while True:
+            # Here is where the data from the client is received. The server will wait for data from the client, and when it receives data, it will process it accordingly.
             data = client_socket.recv(1024)
 
             if not data:
                 break
 
-            # TODO - here is where the data from the client is received and processed. This is where login, logout and user creation should be handled.
+            # Here is where the data from the client is processed.
             packet = json.loads(data.decode("utf-8"))
             action = packet["action"]
-            target = packet.get("target")  # Use .get() to avoid KeyError if "target" is not present
 
             if action == "login":
                 username = packet["data"]["username"]

@@ -38,15 +38,7 @@ print(f"Connecting to server at {SERVER_IP}:5000")
 
 # TODO - welcome function from jespers lagra
 
-# TODO - login function - use hashing from johans lagra, needs server side implementation
-
-# TODO - logout function, needs server side implementation
-
 # TODO - register function from johans lagra, needs server side implementation
-
-# TODO - login_failed from jespers lagra
-
-# TODO - quit from jespers lagra
 
 def receive_packets(client): # TODO - maybe use global variable to decide if messages should be received or not, to avoid receiving messages when logged out. This should be set in the login and logout functions.
     while True:
