@@ -25,13 +25,15 @@ print(f"Connecting to server at {SERVER_IP}:5000")
 
 # TODO - login function - use hashing from johans lagra, needs server side implementation
 
+# TODO - logout function, needs server side implementation
+
 # TODO - register function from johans lagra, needs server side implementation
 
 # TODO - login_failed from jespers lagra
 
 # TODO - quit from jespers lagra
 
-def receive_messages(client):
+def receive_messages(client): # TODO - maybe use global variable to decide if messages should be received or not, to avoid receiving messages when logged out. This should be set in the login and logout functions.
     while True:
         try:
             response = client.recv(1024)
@@ -50,10 +52,11 @@ def receive_messages(client):
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
     client.connect((SERVER_IP, 5000))
 
-    # TODO - here is where main menu should be implemented with login, logout, register and quit options. This should be done before starting the receive_messages thread.
 
     threading.Thread(target=receive_messages, args=(client,), daemon=True).start()
 
+    # TODO - here is where main menu should be implemented with login, logout, register and quit options. Keep in a while loop, but check if patch_stdout might be something like instances which would be bad to start many of
+    # TODO - Only execute following code if user is logged in
     with patch_stdout(): # Makes user input stick to bottom and allows messages to be printed above it
         while True:
             placeholder = HTML('<gray><italic>Write your message here...</italic></gray>')
@@ -66,6 +69,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
             print(f"You: {message}")
 
             if message.lower() == "quit":
-                break
+                break # TODO - this sends the user back to the main menu, but should also send a logout message to the server. This should be handled with a logout function.
 
             client.sendall(message.encode("utf-8"))

@@ -63,7 +63,7 @@ def broadcast(message):
 
 # TODO - login function
 
-# TODO - logout
+# TODO - logout handling. this should be triggered either when message is "quit" or when a certain logout command is sent from the client.
 
 
 def handle_client(client_socket, client_address):
