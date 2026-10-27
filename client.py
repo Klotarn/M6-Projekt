@@ -71,4 +71,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
             if message.lower() == "quit":
                 break # TODO - this sends the user back to the main menu, but should also send a logout message to the server. This should be handled with a logout function.
 
-            client.sendall(message.encode("utf-8"))
+            packet = {
+                "action": "message",
+                "data": message
+            }
+
+            packet = json.dumps(packet)  # Convert the packet to a JSON string before sending
+
+            client.sendall(packet.encode("utf-8"))
