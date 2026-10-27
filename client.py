@@ -43,7 +43,7 @@ def receive_messages(client): # TODO - maybe use global variable to decide if me
 
             data = json.loads(response.decode("utf-8"))
 
-            print(f"\n[{data['sender']}] {data['message']}")
+            print(f"[{data['sender']}] {data['message']}")
 
         except:
             break
