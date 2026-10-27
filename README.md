@@ -11,3 +11,7 @@
 
 - [ ] automatically find server?
 - [ ] Wait for connection before allowing user input
+
+### Accounts
+
+- [ ] Create support for users to make accounts
