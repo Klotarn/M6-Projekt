@@ -105,19 +105,28 @@ def login(client_socket, username, password):
         print(f"Failed login attempt for user {username}.")
         packet = {
             "action": "auth_status",
-            "data": {"status": "failure", "message": "Invalid username or password."}
+            "data": {"status": "login_response_failure", "message": "Invalid username or password."}
         }
         send_packet_to_client(client_socket, packet)
     else:
         print(f"User {username} logged in successfully.")
         packet = {
             "action": "auth_status",
-            "data": {"status": "success", "message": "Login successful."}
+            "data": {"status": "login_response_success", "message": "Login successful."}
         }
         send_packet_to_client(client_socket, packet)
 
 # TODO - logout handling. this should be triggered either when message is "quit" or when a certain logout command is sent from the client.
 
+def logout(client_socket):
+    # TODO - implement logout logic here. This function should handle the logout process for the client.
+    # It should send a packet back to the client indicating that the logout was successful.
+    print(f"Client {client_socket.getpeername()} logged out.")
+    packet = {
+        "action": "auth_status",
+        "data": {"status": "logout_response_success", "message": "Logout successful."}
+    }
+    send_packet_to_client(client_socket, packet)
 
 def handle_client(client_socket, client_address):
     print(f"Connection from {client_address} has been established!")
@@ -142,15 +151,26 @@ def handle_client(client_socket, client_address):
                 password = packet["data"]["password"]
                 login(client_socket, username, password)
 
+            if action == "logout":
+                logout(client_socket)
+
+            if action == "quit":
+                print(f"Client {client_address} requested to disconnect.")
+                break
+
             if action == "message":
                 broadcast(client_address, packet["data"])
 
+    except (ConnectionResetError, ConnectionAbortedError):
+        # A client that closes abruptly can reset the connection on Windows.
+        pass
     finally:
         with clients_lock:
             for client in clients:
                 if client["socket"] == client_socket:
                     clients.remove(client)
                     break
+        client_socket.close()
 
 
 # --------------------------------------------------------------------------

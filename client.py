@@ -12,6 +12,13 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 
+HELP_MESSAGE = """
+The following commands are available:
+/help, Displays this help message
+/quit, Exits the application
+"""
+# /whisper, Sends a private message to a selected user. type /whisper [user] [message]
+
 load_dotenv()
 
 style = Style.from_dict({
@@ -71,19 +78,18 @@ def login():
         }
     }
 
-    packet = json.dumps(packet)  # Convert the packet to a JSON string before sending
-
-    client.sendall(packet.encode("utf-8"))
+    send(packet)
 
 
 def authenticate():
+    # auth_results.queue.clear()
     while True:
         login()
         result = auth_results.get()
         status = result.get("status")
         message = result.get("message")
 
-        if status == "success":
+        if status == "login_response_success":
             print(f"Login successful!")
             return
 
@@ -92,6 +98,72 @@ def authenticate():
 
 def password_hash(password):
     return hashlib.sha256(password.encode(encoding = 'UTF-8', errors = 'strict')).hexdigest()
+
+def logout():
+    packet = {
+        "action": "logout",
+        "data": {}
+    }
+
+    send(packet)
+    
+    authenticate()
+
+def quit():
+    packet = {
+        "action": "quit",
+        "data": {}
+    }
+
+    send(packet)
+
+    print("Disconnected from server.")
+
+def check_message_for_commands(message):
+    if message[0] == "/":
+        if message == "/quit":
+            quit()
+            return "quit"
+
+        if message == "/logout":
+            logout()
+            return "logout"
+
+        if message == "/register":
+            print("Registration functionality is not implemented yet.")
+            return None
+
+        # if message[0-7] == "/whisper":
+        #     print("Du har valt att viska, din lilla busunge")
+        #     whisper(message)
+
+        if message == "/help":
+            print(HELP_MESSAGE)
+            return None
+        else:
+            print("Unknown command. Type /help for a list of commands")
+            return None
+    else:
+        return "message"
+
+
+# def whisper(message):
+#     message_list = message.split(" ")
+
+#     packet = {
+#         "action": "whisper",
+#         "data": {
+#             "target": message_list[1],
+#             "message": message_list[2]
+#         }
+#     }
+
+#     send(packet)
+
+def send(packet):
+    packet = json.dumps(packet)  # Convert the packet to a JSON string before sending
+    client.sendall(packet.encode("utf-8"))
+    return
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
@@ -113,16 +185,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
             if not message.strip(): # Avoid sending empty messages
                 continue
 
-            print(f"You: {message}")
+            command_action = check_message_for_commands(message)
 
-            if message.lower() == "quit":
-                break # TODO - this sends the user back to the main menu, but should also send a logout message to the server. This should be handled with a logout function.
+            if command_action == "quit":
+                break
 
-            packet = {
-                "action": "message",
-                "data": message
-            }
+            if command_action == "message":
+                    
 
-            packet = json.dumps(packet)  # Convert the packet to a JSON string before sending
+                print(f"You: {message}")
 
-            client.sendall(packet.encode("utf-8"))
+                packet = {
+                    "action": command_action,
+                    "data": message
+                }
+
+                send(packet)
