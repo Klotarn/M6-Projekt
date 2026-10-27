@@ -15,4 +15,4 @@
 ### Accounts
 
 - [ ] Create support for users to make accounts
-- [ ] Decide on a syntax for sending commands to the server (such as login, logout, register). Maybe just send a Dict/Json every time with message property and action property?
+- [x] Decide on a syntax for sending commands to the server (such as login, logout, register). Maybe just send a Dict/Json every time with message property and action property?
