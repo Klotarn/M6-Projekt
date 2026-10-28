@@ -11,6 +11,9 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 
+import msvcrt
+from time import sleep
+
 HELP_MESSAGE = """
 The following commands are available:
 /help, Displays this help message
@@ -65,8 +68,65 @@ def receive_packets(client):
             break
 
 
+def welcome():
+    print("""Welcome to ChatIT!
+    
+    l) Log in
+    q) Quit
+    """)
+
+    options = {"l": authenticate, "q": quit}
+
+    key = get_pressed_key(["l", "q"])
+    options[key]()
+
+    
+def get_pressed_key(valid_keys=None):
+    key = msvcrt.getch()
+    try:
+        decoded_key = key.decode("utf-8").lower()
+    except UnicodeDecodeError:
+        decoded_key = None
+
+    invalid_message_shown = False
+
+    while valid_keys != None and decoded_key not in valid_keys:
+        if key == b"\x03":  # Ctrl+C
+            exit()
+
+        if decoded_key not in valid_keys and decoded_key != None:
+            print(f"Invalid key '{decoded_key}'. Please press", end=" ")
+            invalid_message_shown = True
+            for i, valid_key in enumerate(valid_keys):
+                if i == len(valid_keys) - 1:
+                    print(f"or {valid_key}", end="\n")
+                elif i == len(valid_keys) - 2:
+                    print(valid_key, end=" ")
+                else:
+                    print(valid_key, end=", ")
+
+        key = msvcrt.getch()
+        try:
+            decoded_key = key.decode("utf-8").lower()
+        except UnicodeDecodeError:
+            decoded_key = None
+
+    if invalid_message_shown:
+        print()
+
+    sleep(0.1)  # Add a small delay for better feel
+    return decoded_key
+
+
 def login():
-    username = session.prompt("Username: ", is_password=False, placeholder=HTML('<gray><italic>Enter your username...</italic></gray>'), style=auth_style)
+    username = session.prompt("Username: ", is_password=False, placeholder=HTML('<gray><italic>Enter your username... Type /back to go back</italic></gray>'), style=auth_style)
+    if username == "/back":
+        return "back"
+
+    if username.startswith("/"):
+
+        print("Usernames cannot start with '/'. Please try again.")
+        return "retry"
     print_formatted_text(HTML('<bold>Username:</bold> {}').format(username))
     password = password_hash(session.prompt("Password: ", is_password=True, placeholder=HTML('<gray><italic>Enter your password...</italic></gray>'), style=auth_style))
 
@@ -79,11 +139,17 @@ def login():
     }
 
     send(packet)
+    return "sent"
 
 
 def authenticate():
     while True:
-        login()
+        login_result = login()
+        if login_result == "back":
+            return False
+        if login_result == "retry":
+            continue
+
         result = auth_results.get()
         status = result.get("status")
         message = result.get("message")
@@ -94,7 +160,7 @@ def authenticate():
             logged_in.set()
             print(f"Login successful!")
             auth_results.task_done()
-            return
+            return True
 
         logged_in.clear()
         print(f"Login failed: {message}")
@@ -123,8 +189,6 @@ def logout():
     else:
         print(f"Logout failed: {result.get('message', 'Unknown error.')}")
     auth_results.task_done()
-
-    authenticate()
 
 def quit():
     packet = {
@@ -189,27 +253,27 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
 
     threading.Thread(target=receive_packets, args=(client,), daemon=True).start()
 
-    authenticate()
-
-    # TODO - here is where main menu should be implemented with login, logout, register and quit options. Keep in a while loop, but check if patch_stdout might be something like instances which would be bad to start many of
-    # TODO - Only execute following code if user is logged in
     with patch_stdout(): # Makes user input stick to bottom and allows messages to be printed above it
         while True:
-            placeholder = HTML('<gray><italic>Write your message here... Type /help for a list of commands</italic></gray>')
+            welcome()
 
-            message = session.prompt("> ", is_password=False, placeholder=placeholder, style=prompt_style)
+            while logged_in.is_set():
+                placeholder = HTML('<gray><italic>Write your message here... Type /help for a list of commands</italic></gray>')
 
-            if not message.strip(): # Avoid sending empty messages
-                continue
+                message = session.prompt("> ", is_password=False, placeholder=placeholder, style=prompt_style)
 
-            print(f"You: {message}")
+                if not message.strip(): # Avoid sending empty messages
+                    continue
 
-            command_action = check_message_for_commands(message)
+                print(f"You: {message}")
 
-            if command_action == "quit":
-                break
+                command_action = check_message_for_commands(message)
 
-            if command_action == "message":
+                if command_action in {"quit", "logout"}:
+                    break
+
+                if command_action != "message":
+                    continue
 
                 packet = {
                     "action": command_action,
