@@ -17,6 +17,7 @@ from time import sleep
 HELP_MESSAGE = """
 The following commands are available:
 /help, Displays this help message
+/logout, Logs you out and returns you to the welcome screen
 /quit, Exits the application
 """
 # /whisper, Sends a private message to a selected user. type /whisper [user] [message]
