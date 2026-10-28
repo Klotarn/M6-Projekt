@@ -135,6 +135,7 @@ def quit():
     send(packet)
 
     print("Disconnected from server.")
+    exit()
 
 def check_message_for_commands(message):
     if message[0] == "/":
