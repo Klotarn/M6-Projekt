@@ -204,8 +204,9 @@ server.listen(5)
 print("Server is listening on port 5000...")
 
 while True:
-    client_socket, client_address = server.accept()
+    client_socket, client_address = server.accept() # Accept a new client connection
 
+    # Create a new thread to handle the client connection
     thread = threading.Thread(
         target=handle_client, args=(client_socket, client_address)
     )
