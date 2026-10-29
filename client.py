@@ -20,7 +20,7 @@ The following commands are available:
 /logout, Logs you out and returns you to the welcome screen
 /quit, Exits the application
 """
-# /whisper, Sends a private message to a selected user. type /whisper [user] [message]
+# /whisper, send_to_servers a private message to a selected user. type /whisper [user] [message]
 
 load_dotenv()
 
@@ -63,7 +63,7 @@ def receive_packets(client):
                 auth_results.put(data)
 
             if action == "message" and logged_in.is_set():
-                print(f"{data['sender_username']}: {data['message']}")
+                print(f"{data['send_to_serverer_username']}: {data['message']}")
 
         except:
             break
@@ -73,12 +73,13 @@ def welcome():
     print("""Welcome to ChatIT!
     
     l) Log in
+    c) Sign up
     q) Quit
     """)
 
-    options = {"l": authenticate, "q": quit}
+    options = {"l": authenticate, "c": signup, "q": quit}
 
-    key = get_pressed_key(["l", "q"])
+    key = get_pressed_key(["l", "c", "q"])
     options[key]()
 
     
@@ -118,6 +119,34 @@ def get_pressed_key(valid_keys=None):
     sleep(0.1)  # Add a small delay for better feel
     return decoded_key
 
+def signup():
+    username = session.prompt("Select a username: ", is_password=False, placeholder=HTML('<gray><italic>Enter your username... Type /back to go back</italic></gray>'), style=auth_style)
+
+    if username.startswith("/"):
+    
+            print("Usernames cannot start with '/'. Please try again.")
+            return "retry"
+    print_formatted_text(HTML('<bold>Username:</bold> {}').format(username))
+
+    password = password_hash(session.prompt("Password: ", is_password=True, placeholder=HTML('<gray><italic>Enter your password...</italic></gray>'), style=auth_style))
+
+    confirm_password = password_hash(session.prompt("Confirm password: ", is_password=True, placeholder=HTML('<gray><italic>Enter your password...</italic></gray>'), style=auth_style))
+
+    if password != confirm_password:
+        print("Passwords do not match. Please Try again")
+        return "retry"
+
+    packet = {
+        "action": "signup",
+        "data": {
+            "username": username,
+            "password": password
+        }
+    }
+
+    send_to_server(packet)
+    return "sent"
+
 
 def login():
     username = session.prompt("Username: ", is_password=False, placeholder=HTML('<gray><italic>Enter your username... Type /back to go back</italic></gray>'), style=auth_style)
@@ -139,7 +168,7 @@ def login():
         }
     }
 
-    send(packet)
+    send_to_server(packet)
     return "sent"
 
 
@@ -180,7 +209,7 @@ def logout():
         "data": {}
     }
 
-    send(packet)
+    send_to_server(packet)
 
     result = auth_results.get()
     if result.get("status") == "logout_response_success":
@@ -197,7 +226,7 @@ def quit():
         "data": {}
     }
 
-    send(packet)
+    send_to_server(packet)
 
     print("Disconnected from server.")
     exit()
@@ -241,10 +270,10 @@ def check_message_for_commands(message):
 #         }
 #     }
 
-#     send(packet)
+#     send_to_server(packet)
 
-def send(packet):
-    packet = json.dumps(packet)  # Convert the packet to a JSON string before sending
+def send_to_server(packet):
+    packet = json.dumps(packet)  # Convert the packet to a JSON string before send_to_servering
     client.sendall(packet.encode("utf-8"))
     return
 
@@ -263,7 +292,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
 
                 message = session.prompt("> ", is_password=False, placeholder=placeholder, style=prompt_style)
 
-                if not message.strip(): # Avoid sending empty messages
+                if not message.strip(): # Avoid send_to_servering empty messages
                     continue
 
                 print(f"You: {message}")
@@ -284,4 +313,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
                     }
                 }
 
-                send(packet)
+                send_to_server(packet)

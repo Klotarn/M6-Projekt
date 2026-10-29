@@ -101,6 +101,22 @@ def broadcast(sender_socket, message):
 
 # TODO - create_user function
 
+def create_user(client_socket, username, password):
+    users=access_users(access_option, None)
+
+    if username in users:
+        print(f"Signup failed. user {username} already exists.")
+        packet = {
+                    "action": "auth_login_status",
+                    "data": {"status": "login_response_failure", "message": f"Username {username} is not available. Please select another username."}
+                }
+        send_packet_to_client(client_socket, packet)
+
+    else:
+        users["users"].append({"username": username, "password": password})
+        access_users(write_option, users)
+        print(f"New user {username} sucessfully registered")
+
 def login(client_socket, username, password):
     users = access_users(access_option, None)
     if not any(
@@ -165,6 +181,11 @@ def handle_client(client_socket, client_address):
             # Here is where the data from the client is processed.
             packet = json.loads(data.decode("utf-8"))
             action = packet["action"]
+
+            if action == "signup":
+                username = packet["data"]["username"]
+                password = packet["data"]["password"]
+                create_user(client_socket, username, password)
 
             if action == "login":
                 username = packet["data"]["username"]
