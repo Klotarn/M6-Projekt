@@ -20,7 +20,6 @@ The following commands are available:
 /logout, Logs you out and returns you to the welcome screen
 /quit, Exits the application
 """
-# /whisper, Sends a private message to a selected user. type /whisper [user] [message]
 
 load_dotenv()
 
@@ -42,10 +41,6 @@ auth_style = Style.from_dict({
 session = PromptSession(erase_when_done=True, style=prompt_style) # Add erase_when_done=True to make the prompt disappear after input
 
 print(f"Connecting to server at {SERVER_IP}:5000")
-
-# TODO - welcome function from jespers lagra
-
-# TODO - register function from johans lagra, needs server side implementation
 
 def receive_packets(client):
     while True:
@@ -216,10 +211,6 @@ def check_message_for_commands(message):
             print("Registration functionality is not implemented yet.")
             return None
 
-        # if message[0-7] == "/whisper":
-        #     print("Du har valt att viska, din lilla busunge")
-        #     whisper(message)
-
         if message == "/help":
             print(HELP_MESSAGE)
             return None
@@ -229,19 +220,6 @@ def check_message_for_commands(message):
     else:
         return "message"
 
-
-# def whisper(message):
-#     message_list = message.split(" ")
-
-#     packet = {
-#         "action": "whisper",
-#         "data": {
-#             "target": message_list[1],
-#             "message": message_list[2]
-#         }
-#     }
-
-#     send(packet)
 
 def send(packet):
     packet = json.dumps(packet)  # Convert the packet to a JSON string before sending

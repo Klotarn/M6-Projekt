@@ -1,7 +1,6 @@
 import socket
 import threading
 import json
-from ast import literal_eval as make_tuple
 
 messages_path = "./messages.json".encode("utf8")
 messages_fallback_path = "./messages_example.json".encode("utf8")
@@ -96,10 +95,6 @@ def broadcast(sender_socket, message):
         for client in disconnected:
             clients.remove(client)
 
-
-# TODO - auth function to handle login and logout, and user creation. This function should be called in the handle_client function when a client connects.
-
-# TODO - create_user function
 
 def login(client_socket, username, password):
     users = access_users(access_option, None)
